@@ -39,12 +39,20 @@ def get_slot_by_id(db: Session, slot_id: str) -> Slot | None:
     return db.query(Slot).filter(Slot.id == slot_id).first()
 
 
-def delete_slot(db: Session, slot_id: str) -> None:
-    slot = get_slot_by_id(db, slot_id)
-    if not slot:
-        raise ValueError("slot_not_found")
-    db.delete(slot)
-    db.commit()
+@router.delete("/slots/{slot_id}", response_model=MessageResponse)
+def remove_slot(slot_id: str, db: Session = Depends(get_db)):
+    try:
+        slot_service.delete_slot(db, slot_id)
+        return MessageResponse(message="Slot deleted successfully")
+    except ValueError as e:
+        if str(e) == "slot_not_found":
+            raise HTTPException(status_code=404, detail="Slot not found")
+        if str(e) == "slot_not_empty":
+            raise HTTPException(
+                status_code=400, detail="Cannot delete slot: slot still has items"
+            )
+        raise
+
 
 
 def get_full_view(db: Session) -> list[SlotFullView]:
