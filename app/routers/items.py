@@ -66,8 +66,9 @@ def remove_item_from_slot(
         raise
 
 
+
 @router.delete("/slots/{slot_id}/items", response_model=MessageResponse)
-def bulk_remove_items(
+def bulk_remove_items_route(
     slot_id: str,
     body: BulkRemoveBody | None = Body(None),
     db: Session = Depends(get_db),
@@ -77,6 +78,10 @@ def bulk_remove_items(
         item_service.bulk_remove_items(db, slot_id, item_ids)
         return MessageResponse(message="Slot cleared successfully")
     except ValueError as e:
-        if str(e) == "slot_not_found":
+        msg = str(e)
+        if msg == "slot_not_found":
             _slot_404()
+        elif msg.startswith("items_not_found"):
+            # convert missing items to 404
+            raise HTTPException(status_code=404, detail=msg)
         raise
