@@ -59,14 +59,19 @@ def full_view(db: Session = Depends(get_db)):
 
 
 @router.delete("/slots/{slot_id}", response_model=MessageResponse)
-def delete_slot(slot_id: str, db: Session = Depends(get_db)):
+def remove_slot(slot_id: str, db: Session = Depends(get_db)):
     try:
         slot_service.delete_slot(db, slot_id)
-        return MessageResponse(message="Slot removed successfully")
+        return MessageResponse(message="Slot deleted successfully")
     except ValueError as e:
         if str(e) == "slot_not_found":
-            _slot_404()
+            raise HTTPException(status_code=404, detail="Slot not found")
+        if str(e) == "slot_not_empty":
+            raise HTTPException(
+                status_code=400, detail="Cannot delete slot: slot still has items"
+            )
         raise
+
 
 
 @router.post("/slots/{slot_id}/items", response_model=ItemResponse, status_code=201)
