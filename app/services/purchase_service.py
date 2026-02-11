@@ -29,16 +29,17 @@ def purchase(db: Session, item_id: str, cash_inserted: int) -> dict:
         "message": "Purchase successful",
     }
 
-
 def change_breakdown(change: int) -> dict:
     denominations = sorted(settings.SUPPORTED_DENOMINATIONS, reverse=True)
-    result: dict[str, int] = {}
+    result: dict[str, int] = {}  # keys must be strings for JSON
     remaining = change
+
     for d in denominations:
         if remaining <= 0:
             break
         count = remaining // d
         if count > 0:
-            result[str(d)] = count
+            result[str(d)] = count  # convert key to string
             remaining -= count * d
-    return {"change": change, "denominations": result}
+
+    return {"change": change, "denominations": result, "remaining_unreturned": remaining}
