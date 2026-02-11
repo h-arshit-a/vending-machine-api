@@ -85,22 +85,31 @@ def remove_item_quantity(
     db.commit()
 
 
-def bulk_remove_items(
-    db: Session, slot_id: str, item_ids: list[str] | None
-) -> None:
+def bulk_remove_items(db: Session, slot_id: str, item_ids: list[str] | None) -> None:
     slot = db.query(Slot).filter(Slot.id == slot_id).first()
     if not slot:
         raise ValueError("slot_not_found")
-    if item_ids is not None and len(item_ids) > 0:
+
+    if item_ids:
         items = db.query(Item).filter(
             Item.slot_id == slot_id,
             Item.id.in_(item_ids),
         ).all()
+
+        # strict check: raise error if some IDs not found
+        found_ids = {item.id for item in items}
+        missing_ids = set(item_ids) - found_ids
+        if missing_ids:
+            raise ValueError(f"items_not_found: {', '.join(missing_ids)}")
+
         for item in items:
             slot.current_item_count -= item.quantity
             db.delete(item)
     else:
+        # remove all items
         for item in list(slot.items):
             slot.current_item_count -= item.quantity
             db.delete(item)
+
     db.commit()
+
