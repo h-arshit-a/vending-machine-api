@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from datetime import datetime
 
 # --- Slot ---
 class SlotCreate(BaseModel):
@@ -43,7 +43,12 @@ class ItemResponse(BaseModel):
 
 
 class ItemDetailResponse(ItemResponse):
+    id: str
+    name: str
+    price: int
+    quantity: int
     slot_id: str
+    updated_at: datetime
 
 
 class ItemPriceUpdate(BaseModel):
