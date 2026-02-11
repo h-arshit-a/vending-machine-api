@@ -5,18 +5,30 @@ from app.models import Slot
 from app.schemas import SlotCreate, SlotFullView, SlotFullViewItem, SlotResponse
 
 
+from sqlalchemy.exc import IntegrityError
+
 def create_slot(db: Session, data: SlotCreate) -> Slot:
-    count = db.query(Slot).count()
-    if count >= settings.MAX_SLOTS:
-        raise ValueError("slot_limit_reached")
-    existing = db.query(Slot).filter(Slot.code == data.code).first()
-    if existing:
-        raise ValueError("slot_code_exists")
-    slot = Slot(code=data.code, capacity=data.capacity, current_item_count=0)
-    db.add(slot)
-    db.commit()
-    db.refresh(slot)
-    return slot
+    try:
+        # Check slot limit
+        count = db.query(Slot).count()
+        if count >= settings.MAX_SLOTS:
+            raise ValueError("slot_limit_reached")
+
+        # Create slot
+        slot = Slot(code=data.code, capacity=data.capacity, current_item_count=0)
+        db.add(slot)
+        db.flush()  # flush changes to DB without committing
+
+        db.commit()  # commit after all checks
+        db.refresh(slot)
+        return slot
+
+    except IntegrityError as e:
+        db.rollback()
+        # This will catch unique constraint violation on code
+        if "unique" in str(e.orig).lower():
+            raise ValueError("slot_code_exists")
+        raise
 
 
 def list_slots(db: Session) -> list[Slot]:
