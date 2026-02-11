@@ -42,3 +42,4 @@ def purchase(data: PurchaseRequest, db: Session = Depends(get_db)):
 @router.get("/purchase/change-breakdown", response_model=ChangeBreakdownResponse)
 def change_breakdown(change: int = Query(..., ge=0)):
     return purchase_service.change_breakdown(change)
+
