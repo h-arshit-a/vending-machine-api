@@ -116,4 +116,6 @@ class BulkRemoveBody(BaseModel):
 # --- Change breakdown (bonus) ---
 class ChangeBreakdownResponse(BaseModel):
     change: int
-    denominations: dict[str, int]
+    denominations: Dict[str, int]
+    remaining_unreturned: int  # Add this
+
